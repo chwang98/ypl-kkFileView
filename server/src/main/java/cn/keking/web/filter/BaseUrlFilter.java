@@ -17,7 +17,10 @@ public class BaseUrlFilter implements Filter {
     private static String BASE_URL;
 
     public static String getBaseUrl() {
-        String baseUrl;
+        String baseUrl = System.getenv("KKFILEVIEW_BASE_URL");
+        if (StringUtils.isNotBlank(baseUrl)) {
+            return baseUrl;
+        }
         try {
             baseUrl = (String) RequestContextHolder.currentRequestAttributes().getAttribute("baseUrl", 0);
         } catch (Exception e) {

@@ -27,3 +27,4 @@
 [#-- @ftlvariable name="watermarkXSpace" type="java.lang.String"--]
 [#-- @ftlvariable name="watermarkTxt" type="java.lang.String"--]
 [#-- @ftlvariable name="ordinaryUrl" type="java.lang.String"--]
+[#-- @ftlvariable name="token" type="java.lang.String"--]

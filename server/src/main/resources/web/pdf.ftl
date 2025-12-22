@@ -16,7 +16,7 @@
 </#if>
 <iframe src="" width="100%" frameborder="0"></iframe>
 <#if "false" == switchDisabled>
-    <img src="images/jpg.svg" width="48" height="48" style="position: fixed; cursor: pointer; top: 40%; right: 48px; z-index: 999;" alt="使用图片预览" title="使用图片预览" onclick="goForImage()"/>
+<#--    <img src="images/jpg.svg" width="48" height="48" style="position: fixed; cursor: pointer; top: 40%; right: 48px; z-index: 999;" alt="使用图片预览" title="使用图片预览" onclick="goForImage()"/>-->
 </#if>
 </body>
 
@@ -26,7 +26,12 @@
     if (!url.startsWith(baseUrl)) {
         url = baseUrl + 'getCorsFile?urlPath=' + encodeURIComponent(Base64.encode(url));
     }
-    document.getElementsByTagName('iframe')[0].src = "${baseUrl}pdfjs/web/viewer.html?file=" + encodeURIComponent(url) + "&disablepresentationmode=${pdfPresentationModeDisable}&disableopenfile=${pdfOpenFileDisable}&disableprint=${pdfPrintDisable}&disabledownload=${pdfDownloadDisable}&disablebookmark=${pdfBookmarkDisable}&disableediting=${pdfDisableEditing}";
+        document.getElementsByTagName('iframe')[0].src = "${baseUrl}pdfjs-annotation/web/viewer.html?file=" + encodeURIComponent(url) + "&disablepresentationmode=${pdfPresentationModeDisable}&disableopenfile=${pdfOpenFileDisable}&disableprint=${pdfPrintDisable}&disabledownload=${pdfDownloadDisable}&disablebookmark=${pdfBookmarkDisable}&disableediting=${pdfDisableEditing}&#ae_username=" + encodeURIComponent("${re_username}") + "&ae_post_url=" + encodeURIComponent("${re_post_url}") + "&ae_get_url=" + encodeURIComponent("${re_get_url}") + "&ae_token=${token}" + "&ae_business_id=${re_businessId}&ae_business_base_url=${re_business_base_url}";
+<#--    <#if token != null &&"" != token>-->
+<#--    <#else>-->
+<#--        document.getElementsByTagName('iframe')[0].src = "${baseUrl}pdfjs/web/viewer.html?file=" + encodeURIComponent(url) + "&disablepresentationmode=${pdfPresentationModeDisable}&disableopenfile=${pdfOpenFileDisable}&disableprint=${pdfPrintDisable}&disabledownload=${pdfDownloadDisable}&disablebookmark=${pdfBookmarkDisable}&disableediting=${pdfDisableEditing}";-->
+<#--    </#if>-->
+
     document.getElementsByTagName('iframe')[0].height = document.documentElement.clientHeight - 10;
     /**
      * 页面变化调整高度
@@ -38,7 +43,6 @@
 
     function goForImage() {
         var url = window.location.href
-        
         if (url.indexOf("tifPreviewType=pdf") != -1) {
             url = url.replace("tifPreviewType=pdf", "tifPreviewType=jpg");
         } else {

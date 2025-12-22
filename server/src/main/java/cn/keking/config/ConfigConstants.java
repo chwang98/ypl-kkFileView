@@ -72,6 +72,11 @@ public class ConfigConstants {
     private static int pdfTimeout200;
     private static int pdfThread;
 
+    private static String annotationGetUrl;
+    private static String annotationPostUrl;
+    private static String businessBaseUrl;
+    private static String kkBaseUrl;
+
     public static final String DEFAULT_CACHE_ENABLED = "true";
     public static final String DEFAULT_TXT_TYPE = "txt,html,htm,asp,jsp,xml,json,properties,md,gitignore,log,java,py,c,cpp,sql,sh,bat,m,bas,prg,cmd,xbrl";
     public static final String DEFAULT_MEDIA_TYPE = "mp3,wav,mp4,flv";
@@ -813,4 +818,31 @@ public class ConfigConstants {
         ConfigConstants.homeSearch = homeSearch;
     }
 
+
+    public static String getAnnotationGetUrl() {
+        return annotationGetUrl;
+    }
+
+    @Value("${annotation.geturl:/api/pdfAnnotation/get/}")
+    public void setAnnotationGetUrl(String annotationGetUrl) {
+        ConfigConstants.annotationGetUrl = annotationGetUrl;
+    }
+
+    public static String getAnnotationPostUrl() {
+        return annotationPostUrl;
+    }
+
+    @Value("${annotation.posturl:/api/pdfAnnotation/save/}")
+    public void setAnnotationPostUrl(String annotationPostUrl) {
+        ConfigConstants.annotationPostUrl = annotationPostUrl;
+    }
+
+    public static String getBusinessBaseUrl() {
+        return businessBaseUrl;
+    }
+
+    @Value("${annotation.businessBaseUrl}")
+    public void setBusinessBaseUrl(String businessBaseUrl) {
+        ConfigConstants.businessBaseUrl = businessBaseUrl;
+    }
 }

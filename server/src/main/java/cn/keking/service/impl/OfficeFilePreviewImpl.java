@@ -11,15 +11,22 @@ import cn.keking.utils.KkFileUtils;
 import cn.keking.utils.OfficeUtils;
 import cn.keking.utils.WebUtils;
 import cn.keking.web.filter.BaseUrlFilter;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.poi.EncryptedDocumentException;
 import org.jodconverter.core.office.OfficeException;
 import org.springframework.stereotype.Service;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Created by kl on 2018/1/17.
@@ -51,12 +58,12 @@ public class OfficeFilePreviewImpl implements FilePreview {
         String suffix = fileAttribute.getSuffix();  //获取文件后缀
         String fileName = fileAttribute.getName(); //获取文件原始名称
         String filePassword = fileAttribute.getFilePassword(); //获取密码
-        boolean forceUpdatedCache=fileAttribute.forceUpdatedCache();  //是否启用强制更新命令
+        boolean forceUpdatedCache = fileAttribute.forceUpdatedCache();  //是否启用强制更新命令
         boolean isHtmlView = fileAttribute.isHtmlView();  //xlsx  转换成html
         String cacheName = fileAttribute.getCacheName();  //转换后的文件名
         String outFilePath = fileAttribute.getOutFilePath();  //转换后生成文件的路径
         if (!officePreviewType.equalsIgnoreCase("html")) {
-            if (ConfigConstants.getOfficeTypeWeb() .equalsIgnoreCase("web")) {
+            if (ConfigConstants.getOfficeTypeWeb().equalsIgnoreCase("web")) {
                 if (suffix.equalsIgnoreCase("xlsx")) {
                     model.addAttribute("pdfUrl", KkFileUtils.htmlEscape(url)); //特殊符号处理
                     return XLSX_FILE_PREVIEW_PAGE;
@@ -67,14 +74,14 @@ public class OfficeFilePreviewImpl implements FilePreview {
                 }
             }
         }
-        if (forceUpdatedCache|| !fileHandlerService.listConvertedFiles().containsKey(cacheName) || !ConfigConstants.isCacheEnabled()) {
-        // 下载远程文件到本地，如果文件在本地已存在不会重复下载
-        ReturnResponse<String> response = DownloadUtils.downLoad(fileAttribute, fileName);
-        if (response.isFailure()) {
-            return otherFilePreview.notSupportedFile(model, fileAttribute, response.getMsg());
-        }
+        if (forceUpdatedCache || !fileHandlerService.listConvertedFiles().containsKey(cacheName) || !ConfigConstants.isCacheEnabled()) {
+            // 下载远程文件到本地，如果文件在本地已存在不会重复下载
+            ReturnResponse<String> response = DownloadUtils.downLoad(fileAttribute, fileName);
+            if (response.isFailure()) {
+                return otherFilePreview.notSupportedFile(model, fileAttribute, response.getMsg());
+            }
             String filePath = response.getContent();
-            boolean  isPwdProtectedOffice =  OfficeUtils.isPwdProtected(filePath);    // 判断是否加密文件
+            boolean isPwdProtectedOffice = OfficeUtils.isPwdProtected(filePath);    // 判断是否加密文件
             if (isPwdProtectedOffice && !StringUtils.hasLength(filePassword)) {
                 // 加密文件需要密码
                 model.addAttribute("needFilePassword", true);
@@ -112,6 +119,49 @@ public class OfficeFilePreviewImpl implements FilePreview {
             return getPreviewType(model, fileAttribute, officePreviewType, cacheName, outFilePath, fileHandlerService, OFFICE_PREVIEW_TYPE_IMAGE, otherFilePreview);
         }
         model.addAttribute("pdfUrl", WebUtils.encodeFileName(cacheName));  //输出转义文件名 方便url识别
+
+        ServletRequestAttributes servletRequestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        HttpServletRequest request = servletRequestAttributes.getRequest();
+        HttpServletResponse response = servletRequestAttributes.getResponse();
+        Map<String, String[]> parameterMap = request.getParameterMap();
+        if (parameterMap.containsKey("re_username")) {
+//            model.addAttribute("re_username", parameterMap.get("re_username")[0]);
+            request.getSession().setAttribute("re_username", parameterMap.get("re_username")[0]);
+        }
+        if (parameterMap.containsKey("token")) {
+//            model.addAttribute("token", parameterMap.get("token")[0]);
+            request.getSession().setAttribute("token", parameterMap.get("token")[0]);
+            String queryString = request.getQueryString();
+            String redirectUrl = Arrays.stream(queryString.split("&"))
+                    .filter(param -> !param.startsWith("token="))
+                    .filter(param -> !param.startsWith("re_username="))
+                    .collect(Collectors.joining("&"));
+            try {
+                response.sendRedirect(ConfigConstants.getBaseUrl() + "/onlinePreview?" + redirectUrl);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            Object userToken1 = request.getSession().getAttribute("token");
+            if (userToken1 != null) {
+//                model.addAttribute("token", userToken1);
+            }
+
+        }
+
+
+        if (parameterMap.containsKey("re_businessId")) {
+            String businnessId = parameterMap.get("re_businessId")[0];
+            model.addAttribute("re_businessId", businnessId);
+            if (ConfigConstants.getAnnotationGetUrl().endsWith("/")) {
+                model.addAttribute("re_get_url", ConfigConstants.getAnnotationGetUrl() + businnessId);
+            } else {
+                model.addAttribute("re_get_url", ConfigConstants.getAnnotationGetUrl() + "/" + businnessId);
+            }
+        }
+        model.addAttribute("re_post_url", ConfigConstants.getAnnotationPostUrl());
+        model.addAttribute("re_business_base_url", ConfigConstants.getBusinessBaseUrl());
+
         return isHtmlView ? EXEL_FILE_PREVIEW_PAGE : PDF_FILE_PREVIEW_PAGE;
     }
 
@@ -120,7 +170,7 @@ public class OfficeFilePreviewImpl implements FilePreview {
         boolean isPPT = suffix.equalsIgnoreCase("ppt") || suffix.equalsIgnoreCase("pptx");
         List<String> imageUrls = null;
         try {
-            imageUrls =  fileHandlerService.pdf2jpg(outFilePath,outFilePath, pdfName, fileAttribute);
+            imageUrls = fileHandlerService.pdf2jpg(outFilePath, outFilePath, pdfName, fileAttribute);
         } catch (Exception e) {
             Throwable[] throwableArray = ExceptionUtils.getThrowables(e);
             for (Throwable throwable : throwableArray) {
