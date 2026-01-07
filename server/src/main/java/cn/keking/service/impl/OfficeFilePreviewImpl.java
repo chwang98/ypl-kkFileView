@@ -10,12 +10,15 @@ import cn.keking.utils.DownloadUtils;
 import cn.keking.utils.KkFileUtils;
 import cn.keking.utils.OfficeUtils;
 import cn.keking.utils.WebUtils;
+import cn.keking.web.controller.OnlinePreviewController;
 import cn.keking.web.filter.BaseUrlFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.poi.EncryptedDocumentException;
 import org.jodconverter.core.office.OfficeException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
@@ -43,6 +46,9 @@ public class OfficeFilePreviewImpl implements FilePreview {
     private final OfficeToPdfService officeToPdfService;
     private final OtherFilePreviewImpl otherFilePreview;
 
+    private final Logger logger = LoggerFactory.getLogger(OfficeFilePreviewImpl.class);
+
+
     public OfficeFilePreviewImpl(FileHandlerService fileHandlerService, OfficeToPdfService officeToPdfService, OtherFilePreviewImpl otherFilePreview) {
         this.fileHandlerService = fileHandlerService;
         this.officeToPdfService = officeToPdfService;
@@ -64,7 +70,7 @@ public class OfficeFilePreviewImpl implements FilePreview {
         String outFilePath = fileAttribute.getOutFilePath();  //转换后生成文件的路径
         if (!officePreviewType.equalsIgnoreCase("html")) {
             if (ConfigConstants.getOfficeTypeWeb().equalsIgnoreCase("web")) {
-                if (suffix.equalsIgnoreCase("xlsx")) {
+                if (suffix.equalsIgnoreCase("xlsx") || suffix.equalsIgnoreCase("xls")) {
                     model.addAttribute("pdfUrl", KkFileUtils.htmlEscape(url)); //特殊符号处理
                     return XLSX_FILE_PREVIEW_PAGE;
                 }
@@ -128,6 +134,7 @@ public class OfficeFilePreviewImpl implements FilePreview {
 //            model.addAttribute("re_username", parameterMap.get("re_username")[0]);
             request.getSession().setAttribute("re_username", parameterMap.get("re_username")[0]);
         }
+//        logger.info(parameterMap.toString());
         if (parameterMap.containsKey("token")) {
 //            model.addAttribute("token", parameterMap.get("token")[0]);
             request.getSession().setAttribute("token", parameterMap.get("token")[0]);

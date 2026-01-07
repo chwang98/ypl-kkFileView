@@ -7,13 +7,20 @@ import cn.keking.service.FileHandlerService;
 import cn.keking.service.FilePreview;
 import cn.keking.utils.DownloadUtils;
 import cn.keking.utils.WebUtils;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.poi.EncryptedDocumentException;
 import org.springframework.stereotype.Service;
 import org.springframework.ui.Model;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Created by kl on 2018/1/17.
@@ -94,6 +101,47 @@ public class PdfFilePreviewImpl implements FilePreview {
                 model.addAttribute("pdfUrl", url);
             }
         }
+        ServletRequestAttributes servletRequestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        HttpServletRequest request = servletRequestAttributes.getRequest();
+        HttpServletResponse response = servletRequestAttributes.getResponse();
+        Map<String, String[]> parameterMap = request.getParameterMap();
+        if (parameterMap.containsKey("re_username")) {
+//            model.addAttribute("re_username", parameterMap.get("re_username")[0]);
+            request.getSession().setAttribute("re_username", parameterMap.get("re_username")[0]);
+        }
+        if (parameterMap.containsKey("token")) {
+//            model.addAttribute("token", parameterMap.get("token")[0]);
+            request.getSession().setAttribute("token", parameterMap.get("token")[0]);
+            String queryString = request.getQueryString();
+            String redirectUrl = Arrays.stream(queryString.split("&"))
+                    .filter(param -> !param.startsWith("token="))
+                    .filter(param -> !param.startsWith("re_username="))
+                    .collect(Collectors.joining("&"));
+            try {
+                response.sendRedirect(ConfigConstants.getBaseUrl() + "/onlinePreview?" + redirectUrl);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            Object userToken1 = request.getSession().getAttribute("token");
+            if (userToken1 != null) {
+//                model.addAttribute("token", userToken1);
+            }
+
+        }
+
+
+        if (parameterMap.containsKey("re_businessId")) {
+            String businnessId = parameterMap.get("re_businessId")[0];
+            model.addAttribute("re_businessId", businnessId);
+            if (ConfigConstants.getAnnotationGetUrl().endsWith("/")) {
+                model.addAttribute("re_get_url", ConfigConstants.getAnnotationGetUrl() + businnessId);
+            } else {
+                model.addAttribute("re_get_url", ConfigConstants.getAnnotationGetUrl() + "/" + businnessId);
+            }
+        }
+        model.addAttribute("re_post_url", ConfigConstants.getAnnotationPostUrl());
+        model.addAttribute("re_business_base_url", ConfigConstants.getBusinessBaseUrl());
         return PDF_FILE_PREVIEW_PAGE;
     }
 }
