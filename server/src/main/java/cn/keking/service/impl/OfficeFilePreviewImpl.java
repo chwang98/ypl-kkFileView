@@ -10,7 +10,6 @@ import cn.keking.utils.DownloadUtils;
 import cn.keking.utils.KkFileUtils;
 import cn.keking.utils.OfficeUtils;
 import cn.keking.utils.WebUtils;
-import cn.keking.web.controller.OnlinePreviewController;
 import cn.keking.web.filter.BaseUrlFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -168,7 +167,7 @@ public class OfficeFilePreviewImpl implements FilePreview {
         }
         model.addAttribute("re_post_url", ConfigConstants.getAnnotationPostUrl());
         model.addAttribute("re_business_base_url", ConfigConstants.getBusinessBaseUrl());
-
+        model.addAttribute("re_sidebar_open", !isMobilePhone(request.getHeader("User-Agent")) + "");
         return isHtmlView ? EXEL_FILE_PREVIEW_PAGE : PDF_FILE_PREVIEW_PAGE;
     }
 
@@ -202,4 +201,18 @@ public class OfficeFilePreviewImpl implements FilePreview {
         }
     }
 
+    public static boolean isMobilePhone(String userAgent) {
+        if (userAgent == null || userAgent.trim().isEmpty()) {
+            return false;
+        }
+
+        String ua = userAgent.toLowerCase();
+
+        // 是移动设备但不是平板
+        if (ua.contains("tablet") || ua.contains("ipad")) {
+            return false;
+        }
+
+        return ua.contains("mobile") || ua.contains("android") || ua.contains("iphone");
+    }
 }
